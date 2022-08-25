@@ -9,41 +9,37 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"gopkg.in/mgo.v2/bson"
 )
 
-var influencerCollection *mongo.Collection = configs.GetCollection(configs.DB, "users")
-var validate = validator.New()
+var orderCollection *mongo.Collection = configs.GetCollection(configs.DB, "orders")
 
-func CreateInfluencer() gin.HandlerFunc {
+func CreateOrder() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		var influencer models.Influencer
+		var order models.Order
 		defer cancel()
 
-		//validate the request body
-		if err := c.BindJSON(&influencer); err != nil {
+		if err := c.BindJSON(&order); err != nil {
 			c.JSON(http.StatusBadRequest, responses.Response{Status: http.StatusBadRequest, Message: "error", Data: err.Error()})
 			return
 		}
 
-		//use the validator library to validate required fields
-		if validationErr := validate.Struct(&influencer); validationErr != nil {
+		if validationErr := validate.Struct(&order); validationErr != nil {
 			c.JSON(http.StatusBadRequest, responses.Response{Status: http.StatusBadRequest, Message: "error", Data: validationErr.Error()})
 			return
 		}
 
-		newInfluencer := models.Influencer{
-			Name:               influencer.Name,
-			InstagramProfile:   influencer.InstagramProfile,
-			InstagramFollowers: influencer.InstagramFollowers,
-			ProfileDescription: influencer.ProfileDescription,
+		newOrder := models.Order{
+			Category:    order.Category,
+			Description: order.Description,
+			PreviewDate: order.PreviewDate,
+			Contact:     order.Contact,
 		}
 
-		result, err := influencerCollection.InsertOne(ctx, newInfluencer)
+		result, err := orderCollection.InsertOne(ctx, newOrder)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.Response{Status: http.StatusInternalServerError, Message: "error", Data: err.Error()})
 			return
@@ -53,51 +49,50 @@ func CreateInfluencer() gin.HandlerFunc {
 	}
 }
 
-func GetInfluencerByID() gin.HandlerFunc {
+func GetOrderByID() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		id := c.Param("influencerID")
-		var influencer models.Influencer
+		id := c.Param("orderID")
+		var order models.Order
 		defer cancel()
 
 		objId, _ := primitive.ObjectIDFromHex(id)
 
-		err := influencerCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&influencer)
+		err := orderCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&order)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.Response{Status: http.StatusInternalServerError, Message: "error", Data: err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.Response{Status: http.StatusOK, Message: "success", Data: influencer})
+		c.JSON(http.StatusOK, responses.Response{Status: http.StatusOK, Message: "success", Data: order})
 	}
 }
 
-func GetAllInfluencers() gin.HandlerFunc {
+func GetAllOrders() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		var influencers []models.Influencer
+		var orders []models.Order
 		defer cancel()
 
-		results, err := influencerCollection.Find(ctx, bson.M{})
+		results, err := orderCollection.Find(ctx, bson.M{})
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.Response{Status: http.StatusInternalServerError, Message: "error", Data: err.Error()})
 			return
 		}
 
-		//reading from the db in an optimal way
 		defer results.Close(ctx)
 		for results.Next(ctx) {
-			var singleInfluencer models.Influencer
-			if err = results.Decode(&singleInfluencer); err != nil {
+			var singleOrder models.Order
+			if err = results.Decode(&singleOrder); err != nil {
 				c.JSON(http.StatusInternalServerError, responses.Response{Status: http.StatusInternalServerError, Message: "error", Data: err.Error()})
 			}
 
-			influencers = append(influencers, singleInfluencer)
+			orders = append(orders, singleOrder)
 		}
 
 		c.JSON(http.StatusOK,
-			responses.Response{Status: http.StatusOK, Message: "success", Data: influencers},
+			responses.Response{Status: http.StatusOK, Message: "success", Data: orders},
 		)
 	}
 }
