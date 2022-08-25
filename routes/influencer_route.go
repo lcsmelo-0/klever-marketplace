@@ -7,5 +7,7 @@ import (
 )
 
 func UserRoute(router *gin.Engine) {
-	router.POST("/influencer", controllers.CreateInfluencer())
+	router.POST("/influencers", controllers.CreateInfluencer())
+	router.GET("/influencers/:influencerId", controllers.GetInfluencerByID())
+	router.GET("/influencers", controllers.GetAllInfluencers())
 }
