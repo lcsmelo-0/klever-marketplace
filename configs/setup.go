@@ -3,6 +3,7 @@ package configs
 import (
 	"context"
 	"fmt"
+	"klever-marketplace/utils"
 	"log"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 )
 
 func ConnectDB() *mongo.Client {
-	client, err := mongo.NewClient(options.Client().ApplyURI(EnvMongoURI()))
+	client, err := mongo.NewClient(options.Client().ApplyURI(utils.GetMongoURI()))
 	if err != nil {
 		log.Fatal(err)
 	}

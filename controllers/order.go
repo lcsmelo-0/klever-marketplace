@@ -33,10 +33,14 @@ func CreateOrder() gin.HandlerFunc {
 		}
 
 		newOrder := models.Order{
-			Category:    order.Category,
-			Description: order.Description,
-			PreviewDate: order.PreviewDate,
-			Contact:     order.Contact,
+			CompanyName:    order.CompanyName,
+			Description:    order.Description,
+			Categories:     order.Categories,
+			SocialNetworks: order.SocialNetworks,
+			Token:          order.Token,
+			Reach:          order.Reach,
+			Deadline:       order.Deadline,
+			CampaignStart:  order.CampaignStart,
 		}
 
 		result, err := orderCollection.InsertOne(ctx, newOrder)
